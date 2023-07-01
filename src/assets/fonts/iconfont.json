@@ -1,0 +1,184 @@
+{
+  "id": "353110",
+  "name": "播放器",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "168684",
+      "name": "静音",
+      "font_class": "vjs-silent",
+      "unicode": "e614",
+      "unicode_decimal": 58900
+    },
+    {
+      "icon_id": "791526",
+      "name": "全屏",
+      "font_class": "vjs-full-screen",
+      "unicode": "e6e0",
+      "unicode_decimal": 59104
+    },
+    {
+      "icon_id": "1022034",
+      "name": "播放",
+      "font_class": "vjs-play-2",
+      "unicode": "e634",
+      "unicode_decimal": 58932
+    },
+    {
+      "icon_id": "1270568",
+      "name": "暂停",
+      "font_class": "vjs-pause",
+      "unicode": "e79c",
+      "unicode_decimal": 59292
+    },
+    {
+      "icon_id": "1688264",
+      "name": "音量",
+      "font_class": "vjs-volume",
+      "unicode": "e87a",
+      "unicode_decimal": 59514
+    },
+    {
+      "icon_id": "1849492",
+      "name": "退出全屏",
+      "font_class": "vjs-exit-full-screen",
+      "unicode": "e683",
+      "unicode_decimal": 59011
+    },
+    {
+      "icon_id": "2957281",
+      "name": "下一集",
+      "font_class": "vjs-next-part",
+      "unicode": "e607",
+      "unicode_decimal": 58887
+    },
+    {
+      "icon_id": "3072165",
+      "name": "取消",
+      "font_class": "vjs-cancel",
+      "unicode": "e61d",
+      "unicode_decimal": 58909
+    },
+    {
+      "icon_id": "3106285",
+      "name": "向上箭头",
+      "font_class": "vjs-up-arrow",
+      "unicode": "e622",
+      "unicode_decimal": 58914
+    },
+    {
+      "icon_id": "3110316",
+      "name": "播放",
+      "font_class": "vjs-play",
+      "unicode": "e62a",
+      "unicode_decimal": 58922
+    },
+    {
+      "icon_id": "3396533",
+      "name": "设置",
+      "font_class": "vjs-shezhi",
+      "unicode": "e626",
+      "unicode_decimal": 58918
+    },
+    {
+      "icon_id": "3401579",
+      "name": "选中",
+      "font_class": "vjs-xuanzhong",
+      "unicode": "e627",
+      "unicode_decimal": 58919
+    },
+    {
+      "icon_id": "3401580",
+      "name": "未选中",
+      "font_class": "vjs-weixuanzhong",
+      "unicode": "e628",
+      "unicode_decimal": 58920
+    },
+    {
+      "icon_id": "3957865",
+      "name": "快进5秒",
+      "font_class": "vjs-fast-forward",
+      "unicode": "e62e",
+      "unicode_decimal": 58926
+    },
+    {
+      "icon_id": "3957866",
+      "name": "快退5秒",
+      "font_class": "vjs-recede",
+      "unicode": "e62f",
+      "unicode_decimal": 58927
+    },
+    {
+      "icon_id": "4499774",
+      "name": "duigou",
+      "font_class": "duigou",
+      "unicode": "e604",
+      "unicode_decimal": 58884
+    },
+    {
+      "icon_id": "5089368",
+      "name": "vjs-page-full-screen",
+      "font_class": "vjs-page-full-screen",
+      "unicode": "e615",
+      "unicode_decimal": 58901
+    },
+    {
+      "icon_id": "5089369",
+      "name": "vjs-exit-page-full-s",
+      "font_class": "vjs-exit-page-full-s",
+      "unicode": "e616",
+      "unicode_decimal": 58902
+    },
+    {
+      "icon_id": "5645670",
+      "name": "vjs-not-collected",
+      "font_class": "vjs-not-collected",
+      "unicode": "e621",
+      "unicode_decimal": 58913
+    },
+    {
+      "icon_id": "5645805",
+      "name": "vjs-collected",
+      "font_class": "vjs-collected1",
+      "unicode": "e623",
+      "unicode_decimal": 58915
+    },
+    {
+      "icon_id": "5815354",
+      "name": "vjs-screenshot",
+      "font_class": "vjs-screenshot",
+      "unicode": "e646",
+      "unicode_decimal": 58950
+    },
+    {
+      "icon_id": "9653623",
+      "name": "barrage",
+      "font_class": "barrage",
+      "unicode": "e648",
+      "unicode_decimal": 58952
+    },
+    {
+      "icon_id": "12411572",
+      "name": "picture-in-picture",
+      "font_class": "picture-in-picture",
+      "unicode": "e659",
+      "unicode_decimal": 58969
+    },
+    {
+      "icon_id": "12501416",
+      "name": "report",
+      "font_class": "report",
+      "unicode": "e65b",
+      "unicode_decimal": 58971
+    },
+    {
+      "icon_id": "12673452",
+      "name": "color-wheel",
+      "font_class": "color-wheel",
+      "unicode": "e65e",
+      "unicode_decimal": 58974
+    }
+  ]
+}

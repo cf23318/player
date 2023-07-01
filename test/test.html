@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no">
+  <meta name="App-Config" content="fullscreen=yes,useHistoryState=yes,transition=yes">
+  <meta id="setViewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#5293cf">
+
+  <!-- <script src="https://res.wx.qq.com/mmbizwap/zh_CN/htmledition/js/vconsole/2.5.2/vconsole.min.js"></script> -->
+  <link href="https://unpkg.com/video.js@7.1.0/dist/video-js.css" rel="stylesheet">
+  <script src="https://unpkg.com/video.js@7.1.0/dist/video.js"></script>
+  <!-- <script src="https://unpkg.com/videojs-contrib-quality-levels@2.0.9/dist/videojs-contrib-quality-levels.min.js"></script> -->
+  <script src="https://unpkg.com/videojs-contrib-hls@5.14.1/dist/videojs-contrib-hls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.10/lodash.min.js"></script>
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
+    .weui-mask,
+    .weui-mask_transparent {
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      right: 0;
+      left: 0;
+      bottom: 0;
+    }
+
+    .weui-toast {
+      position: fixed;
+      z-index: 5000;
+      width: 7.6em;
+      min-height: 7.6em;
+      top: 180px;
+      left: 50%;
+      margin-left: -3.8em;
+      background: rgba(40, 40, 40, .75);
+      text-align: center;
+      border-radius: 5px;
+      color: #fff;
+    }
+
+    .weui-icon_toast.weui-loading {
+      margin: 30px 0 0;
+      width: 38px;
+      height: 38px;
+      vertical-align: baseline;
+    }
+
+    .weui-loading {
+      width: 20px;
+      height: 20px;
+      display: inline-block;
+      vertical-align: middle;
+      -webkit-animation: e 1s steps(12) infinite;
+      animation: e 1s steps(12) infinite;
+      background: transparent url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHBhdGggZmlsbD0ibm9uZSIgZD0iTTAgMGgxMDB2MTAwSDB6Ii8+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iMjAiIHg9IjQ2LjUiIHk9IjQwIiBmaWxsPSIjRTlFOUU5IiByeD0iNSIgcnk9IjUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAgLTMwKSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjIwIiB4PSI0Ni41IiB5PSI0MCIgZmlsbD0iIzk4OTY5NyIgcng9IjUiIHJ5PSI1IiB0cmFuc2Zvcm09InJvdGF0ZSgzMCAxMDUuOTggNjUpIi8+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iMjAiIHg9IjQ2LjUiIHk9IjQwIiBmaWxsPSIjOUI5OTlBIiByeD0iNSIgcnk9IjUiIHRyYW5zZm9ybT0icm90YXRlKDYwIDc1Ljk4IDY1KSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjIwIiB4PSI0Ni41IiB5PSI0MCIgZmlsbD0iI0EzQTFBMiIgcng9IjUiIHJ5PSI1IiB0cmFuc2Zvcm09InJvdGF0ZSg5MCA2NSA2NSkiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSIyMCIgeD0iNDYuNSIgeT0iNDAiIGZpbGw9IiNBQkE5QUEiIHJ4PSI1IiByeT0iNSIgdHJhbnNmb3JtPSJyb3RhdGUoMTIwIDU4LjY2IDY1KSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjIwIiB4PSI0Ni41IiB5PSI0MCIgZmlsbD0iI0IyQjJCMiIgcng9IjUiIHJ5PSI1IiB0cmFuc2Zvcm09InJvdGF0ZSgxNTAgNTQuMDIgNjUpIi8+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iMjAiIHg9IjQ2LjUiIHk9IjQwIiBmaWxsPSIjQkFCOEI5IiByeD0iNSIgcnk9IjUiIHRyYW5zZm9ybT0icm90YXRlKDE4MCA1MCA2NSkiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSIyMCIgeD0iNDYuNSIgeT0iNDAiIGZpbGw9IiNDMkMwQzEiIHJ4PSI1IiByeT0iNSIgdHJhbnNmb3JtPSJyb3RhdGUoLTE1MCA0NS45OCA2NSkiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSIyMCIgeD0iNDYuNSIgeT0iNDAiIGZpbGw9IiNDQkNCQ0IiIHJ4PSI1IiByeT0iNSIgdHJhbnNmb3JtPSJyb3RhdGUoLTEyMCA0MS4zNCA2NSkiLz48cmVjdCB3aWR0aD0iNyIgaGVpZ2h0PSIyMCIgeD0iNDYuNSIgeT0iNDAiIGZpbGw9IiNEMkQyRDIiIHJ4PSI1IiByeT0iNSIgdHJhbnNmb3JtPSJyb3RhdGUoLTkwIDM1IDY1KSIvPjxyZWN0IHdpZHRoPSI3IiBoZWlnaHQ9IjIwIiB4PSI0Ni41IiB5PSI0MCIgZmlsbD0iI0RBREFEQSIgcng9IjUiIHJ5PSI1IiB0cmFuc2Zvcm09InJvdGF0ZSgtNjAgMjQuMDIgNjUpIi8+PHJlY3Qgd2lkdGg9IjciIGhlaWdodD0iMjAiIHg9IjQ2LjUiIHk9IjQwIiBmaWxsPSIjRTJFMkUyIiByeD0iNSIgcnk9IjUiIHRyYW5zZm9ybT0icm90YXRlKC0zMCAtNS45OCA2NSkiLz48L3N2Zz4=) no-repeat;
+      background-size: 100%;
+    }
+
+    @keyframes e {
+      0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+      }
+      to {
+        -webkit-transform: rotate(1turn);
+        transform: rotate(1turn);
+      }
+    }
+
+    .weui-toast__content {
+      margin: 0 0 15px;
+    }
+
+    body {
+      width: 100%;
+      max-width: 560px;
+      height: 0;
+    }
+
+    #video-box {
+      position: relative;
+      padding-bottom: 56%;
+    }
+
+    #my-video {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div id="video-box">
+    <video id="my-video" class="video-js"></video>
+  </div>
+
+  <button id="btn">截屏</button>
+
+  <script>
+    var options = {
+      controls: true,
+      autoplay: false,
+      preload: 'auto',
+      loadingSpinner: false,
+      sources: [{
+        // src: '../static/video/mp4.mp4',
+        // type: 'video/mp4',
+
+        // src: `../public/video/m3u8/play.m3u8`,
+        src: `https://kvhd1.b-cdn.net/tv11.m3u8?token=SbB8UHn8nqO4Bq0XkdUyWA&expires=1568705020`,
+        // src: `https://kvhd1.b-cdn.net/tv11.m3u8?token=aSrDRSR_vZEh95XdsGJiaQ&expires=1568639601`,
+        // src: 'https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8',
+        type: 'application/x-mpegURL',
+      }],
+      html5: {
+        nativeAudioTracks: false,
+        nativeVideoTracks: false,
+        hls: {
+          overrideNative: true
+        }
+      },
+    };
+
+    var player = window.videojs('my-video', options, function () {
+      var player = this;
+      var video = player.el().children[0];
+
+      video.play();
+      console.log(video.paused);
+
+      player.on('canplay', function () {
+        console.log(new Date().getTime());
+      });
+
+      player.on('ended', function () {
+        console.log('ended');
+      });
+
+      // player.on('canplaythrough', function () {
+      //   console.log(new Date().getTime());
+      // });
+    });
+
+    var newOptions = player.options()
+
+    setTimeout(() => {
+      console.log('change')
+      newOptions['sources'] = [
+        {
+          src: `https://kvhd1.b-cdn.net/tv11.m3u8?token=aSrDRSR_vZEh95XdsGJiaQ&expires=1568639601`,
+          type: 'application/x-mpegURL',
+        }
+      ];
+      player.options(newOptions);
+    }, 2000);
+
+    // let qualityLevels = player.qualityLevels();
+
+    // console.log('qualityLevels', qualityLevels)
+
+    // qualityLevels.addQualityLevel({
+    //   id: '123',
+    //   width: 1920,
+    //   height: 1080,
+    //   bitrate: 3000,
+    //   enabled: true,
+    //   url: ''
+    // })
+  </script>
+</body>
+
+</html>

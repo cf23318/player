@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no">
+  <meta name="App-Config" content="fullscreen=yes,useHistoryState=yes,transition=yes">
+  <meta id="setViewport" name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#5293cf">
+  <!-- <meta name="apple-mobile-web-app-capable" content="yes`" />
+  <meta name="viewport" id="viewport" content="width=600px, initial-scale=.6, minimum-scale=.6, maximum-scale=1" /> -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.js"></script>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script> -->
+  <!-- <script src="http://wechatfe.github.io/vconsole/lib/vconsole.min.js?v=3.3.0"></script>
+  <script>
+    var vConsole = new VConsole();
+    console.log('vConsole', vConsole)
+  </script> -->
+  <title>vue-videojs</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      background: #f1f1f1;
+    }
+
+    .mtg-videoplay {
+      max-width: 1190px;
+      min-height: 215px;
+
+      /* width: 900px;
+      height: 507px; */
+    }
+
+    .mtg-videoplay.mtg-videoplay-widescreen {
+      /* width: 1190px;
+      height: 670px; */
+    }
+
+    #mtg-videoplay-player {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 56.33%;
+      /* padding-bottom: 80%; */
+      background: #000;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    body #mtg-videoplay-player.mod_player {
+      position: fixed;
+      z-index: 11;
+      right: 0;
+      width: 380px;
+      height: 214px;
+      padding-bottom: 0;
+      box-shadow: 0 0 14px 5px rgba(153, 153, 153, .45);
+    }
+
+    #mtg-videoplay-player.vjs-page-fullscreen {
+      position: fixed !important;
+      left: 0 !important;
+      right: 0 !important;
+      top: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      box-shadow: none;
+    }
+
+    .video-js {
+      height: 560px;
+    }
+
+    img {
+      vertical-align: middle;
+    }
+
+    a:hover,
+    a:active {
+      text-decoration: none;
+      color: #1f93ea;
+      outline: 0 none;
+    }
+
+    a:visited,
+    a:focus {
+      text-decoration: none;
+      color: inherit;
+      outline: 0 none;
+    }
+
+    a:hover,
+    a:focus {
+      color: #23527c;
+      text-decoration: none;
+    }
+
+    a:active,
+    a:hover {
+      outline: 0;
+    }
+
+    .vjs-component-box #vjs-time-display {
+      width: 130px;
+    }
+  </style>
+</head>
+
+<body class="">
+  <div class="mtg-videoplay">
+    <!-- mtg-videoplay-widescreen -->
+    <div id="mtg-videoplay-player" class="">
+
+    </div>
+    <!-- mod_player -->
+  </div>
+  <!-- built files will be auto injected -->
+
+  <button id="toggle">切换</button>
+
+  <script>
+    function isPc() {
+      var userAgentInfo = navigator.userAgent
+      var Agents = ['Android', 'iPhone', 'SymbianOS', 'Windows Phone', 'iPod']
+      // , 'iPad'
+      var flag = true
+
+      for (var v = 0; v < Agents.length; v++) {
+        if (userAgentInfo.indexOf(Agents[v]) > 0) {
+          flag = false
+          break
+        }
+      }
+      return flag
+    }
+
+    function deepMerge() {
+      return window._.mergeWith.apply(null, Array.prototype.slice.call(arguments), function (curr, next) {
+        if (window._.isArray(curr)) {
+          return next
+        }
+      })
+    }
+
+    function vjsChangeVideoArgs(args) {
+      if (args.tvid && args._id) {
+        if (window.currentPartInfo.keepHistory) {
+          window.currentPartInfo.keepHistory = {}
+        } else {
+          if (args.history && args.history.part_id && args.history.part) {
+            deepMerge(window.currentPartInfo, {
+              history: args.history
+            })
+          } else {
+            window.currentPartInfo.history = {}
+          }
+        }
+
+        // 播放器：切换剧集时，切换当前集的信息
+        deepMerge(window.currentPartInfo, {
+          playUrl: args.url,
+          first: false,
+          part_id: args._id,
+          currentPartNum: args.part,
+          prologue: args.prologue,
+          epilogue: args.epilogue,
+          uid: args.danmu ? args.danmu.uid : null,
+          pid: args.danmu ? args.danmu.pid : null,
+          ptk: args.danmu ? args.danmu.ptk : null
+        })
+      }
+    };
+
+    window.onload = function () {
+      window.currentPartInfo = {
+        // playerType: 'undefined', // 指定播放器类型，不指定时，自动识别。 ['extVjs', 'vjs', 'default']
+        autoplay: false,
+        // hasUseLocalSetting: false,
+        // defaultVolume: 0,
+        // hasUseShortVideoSetting: true, // 本地储存所使用的名称，正常视频的设置和短视频的设置在不同的地方保存
+
+        customControl: {
+          // // controlBar: 'bottom',
+          // isScreenshot: true,
+          // isPageFullscreen: true,
+          // isBarrage: true,
+          // isBarrageInputInNormalWindow: true,
+          // isBarrageInputInFullscreen: true,
+          // isPictureInPicture: true,
+          // isOpenNoActionNotification: true
+
+          // live: true,
+          // controlBar: 'bottom',
+          isScreenshot: true,
+          isPageFullscreen: true,
+          isBarrage: true,
+          isBarrageInputInNormalWindow: false,
+          isBarrageInputInFullscreen: false,
+          isBarrageDisabledFeatures: true,
+          isPictureInPicture: true,
+          isMandatoryAdvertisementHiddenPause: true
+        },
+
+        playerForm: isPc() ? 'pc' : 'mobi',
+        playerBox: '#mtg-videoplay-player',
+        seo: 'series',
+        isLogin: 1,
+        id: 301806544865001,
+        // 'part_id': '101806544865002',
+        playGenus: 10344, // ['10344' 正片, '10345' 花絮, '10346' MV, '10340' 预告]
+        // 'part': 1,
+        // title: '扶摇 第一集',
+        title: '20200408：第3期 赵小棠上官喜爱拍卖会针锋相对 蔡卓宜飙演技秒落泪',
+        minPart: 1,
+        // 'prologue': 10,
+        // 'epilogue': -10,
+        nextPartReverse: true,
+        // 'SBID': 'SBID',
+        // 'token': 'token001',
+        timeFormat: 'hh:mm:ss',
+        logo: '/static/img/video_loading.gif',
+        defaultLogo: '/static/img/video_logo.gif',
+        previewPicPath: 'http://bny.remuxhdr.com/666/720/',
+        nativePlayer: [
+          // 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36',
+          // 'Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Mobile Safari/537.36',
+          // 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.117 Safari/537.36'
+        ],
+        defaultVjsPlayer: [
+          // 'Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Mobile Safari/537.36',
+          // 'Mozilla/5.0 (Linux; Android 6.0.1; NX531J Build/MMB29M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Mobile Safari/537.36',
+          // 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36',
+          // 'Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Mobile Safari/537.36',
+          // 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.117 Safari/537.36'
+          // 'Mozilla/5.0 (Linux; Android 6.0; MStar Android TV Build/MRA58K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/48.0.2542.0 Mobile Safari/537.36'
+        ],
+        // history: {
+        //   sec: 30,
+        //   part_id: 101806544865003,
+        //   part: 3
+        // },
+        sharing: {
+          // 'time': -1,
+          time: 0,
+          parm: 'yxBFwk2vHEx743CJp5sqg77VthB9wf6h',
+          timeout: 180
+        },
+        wxSubscribe: {
+          time: 0,
+          timeout: 180,
+          code: '445689',
+          qrCode: '//asset.ktvimg.com/2020/tv/20201007/538ad83795a4a7f52e361331b94ac5df.jpg',
+          logo: '//asset.ktvimg.com/2020/tv/20201007/d76c532cad3d6131127aa2dd8d5a83d8.jpg',
+          pcExample: '//asset.ktvimg.com/2020/tv/20201007/c78153016530e1f90d00eb1a5f119bf0.jpg',
+          mobiExample: '//asset.ktvimg.com/2020/tv/20201007/06f8b9c089ebaff2f0d4b6b6e9fe81ce.jpg',
+          name: '看看',
+          id: 'xxx',
+          title: '官方公众号'
+        },
+        jinri: {
+          time: -1, // @param {Number} 在多少秒需要下载 app
+          url: 'http://www.baidu.com',
+          password: '口令23333',
+          activeNumber: 0,
+          pcPic: {
+            bg: 'http://localhost:8080/video/jinri/pc/jinri-bg.png',
+            top: 'http://localhost:8080/video/jinri/pc/jinri-top.png',
+            appPic: 'http://localhost:8080/video/jinri/pc/jinri-app-pic.gif',
+            bottom: 'http://localhost:8080/video/jinri/pc/jinri-bottom.png'
+          },
+          mobiPic: {
+            bg: 'http://localhost:8080/video/jinri/mobi/jinri-bg.png',
+            top: 'http://localhost:8080/video/jinri/mobi/jinri-top.png',
+            appPic: 'http://localhost:8080/video/jinri/mobi/jinri-app-pic.gif',
+            button: 'http://localhost:8080/video/jinri/mobi/jinri-button.png',
+            bottom: 'http://localhost:8080/video/jinri/mobi/jinri-bottom.png'
+          }
+        },
+        country: {
+          code: 'AU',
+          name: '澳洲',
+          city: 'VIC'
+        },
+        advertising: {
+          pause: [
+            {
+              'title': '测试播放广告1',
+              'url': 'http://www.baidu.com',
+              'weights': 1, // 概率
+              // 'photo': 'https://www.baidu.com/img/superlogo_c4d7df0a003d3db9b65e9ef0fe6da1ec.png?where=super'
+              'photo': 'https://asset.bixjf.com/2019/tv/20190329/690043516b2d1713d54fa5f3d306037a.jpg'
+            },
+            {
+              'title': '测试播放广告2',
+              'url': 'http://www.baidu.com',
+              'weights': 2, // 概率
+              'photo': 'http://fanyi.bdstatic.com/static/translation/img/header/logo_cbfea26.png'
+            },
+            {
+              'title': '测试播放广告3',
+              'url': 'http://www.baidu.com',
+              'weights': 2, // 概率
+              'photo': 'http://mat1.gtimg.com/sports/kbsweb4//statistic/1_zilVRZ.png',
+            }
+          ],
+          closeMandatory: true,
+          recordHistoryMandatoryAd: false,
+          // disableMandatory: true,
+          mandatory: {
+            0: [
+              // {
+              //   seconds: 15,
+              //   photo: '/video/1.mp4',
+              //   // 'photo': `https://asset.ktvimg.com/2019/ad/20190401/c090ce612c32a13a283b5cf7c9608cec.mp4`,
+              //   // 'photo': `https://asset.ktvimg.com/2019/ad/20190401/c090ce612c32a13a283b5cf7c9608cec.mp4?params=${Math.random()}`,
+              //   // 'photo': `https://asset.ktvimg.com/2019/ad/20190330/ced1a86ffecc62ef7e1b427e64c56af0.mp4`,
+              //   // 'photo': `https://asset.ktvimg.com/2019/ad/20190330/ced1a86ffecc62ef7e1b427e64c56af0.mp4?params=${Math.random()}`,
+              //   url: 'http://www.baidu.com'
+              // },
+              // {
+              //   'seconds': 15,
+              //   'photo': '/video/2.mp4',
+              //   // 'photo': `https://asset.ktvimg.com/2019/ad/20190330/ced1a86ffecc62ef7e1b427e64c56af0.mp4`,
+              //   // 'photo': `https://asset.ktvimg.com/2019/ad/20190330/ced1a86ffecc62ef7e1b427e64c56af0.mp4?params=${Math.random()}`,
+              //   // 'photo': `https://asset.ktvimg.com/2019/ad/20190401/c090ce612c32a13a283b5cf7c9608cec.mp4`,
+              //   // 'photo': `https://asset.ktvimg.com/2019/ad/20190401/c090ce612c32a13a283b5cf7c9608cec.mp4?params=${Math.random()}`,
+              //   'url': 'http://www.baidu.com',
+              // },
+              // {
+              //   'seconds': 5,
+              //   'photo': '/video/3.mp4',
+              //   'url': 'http://www.baidu.com',
+              // },
+              // {
+              //   'seconds': 5,
+              //   'photo': '/video/4.mp4',
+              //   'url': 'http://www.baidu.com',
+              // },
+            ]
+            // '35': [
+            //   {
+            //     'seconds': 5,
+            //     'photo': '/video/1.mp4',
+            //     'url': 'http://www.baidu.com',
+            //   },
+            //   {
+            //     'seconds': 5,
+            //     'photo': '/video/2.mp4',
+            //     'url': 'http://www.baidu.com',
+            //   },
+            // ],
+          },
+          trigger: function ({ url }) {
+            // console.log('ad trigger', url)
+
+            // return true;
+          },
+          mandatoryEnd: function (info) {
+            // console.log('end', info)
+          },
+          mandatoryClick: function (info) {
+            // console.log('click', info)
+          },
+          corner: [
+            {
+              'url': 'http://www.baidu.com',
+              'weights': 1, // 概率
+              'photo': 'https://asset.bixjf.com/2019/tv/20190329/690043516b2d1713d54fa5f3d306037a.jpg',
+              'dir': 'lefttop'
+            },
+            {
+              'url': 'http://www.baidu.com',
+              'weights': 1, // 概率
+              'photo': 'http://fanyi.bdstatic.com/static/translation/img/header/logo_cbfea26.png',
+              'dir': 'leftbottom'
+            },
+            {
+              'url': 'http://www.baidu.com',
+              'weights': 1, // 概率
+              'photo': 'http://mat1.gtimg.com/sports/kbsweb4//statistic/1_zilVRZ.png',
+              'dir': 'rightbottom'
+            }
+          ],
+          cornerDisplay: (info) => {
+            console.log('cornerDisplay', info)
+          },
+          cornerClick: (info) => {
+            console.log('cornerClick', info)
+          },
+          pauseDisplay: function (info) {
+            console.log('pauseDisplay', info.title)
+          }
+        },
+        collect: {
+          displayState: true,
+          isCollect: false
+        },
+        // liveOtherVideo: [
+        //   {
+        //     '_id': 301806544865001,
+        //     'title': '解说员：张三',
+        //     'detail_title': 'NHL常规赛 解说员：张三_1080P',
+        //     'rate': [
+        //       {
+        //         'title': '1080P',
+        //         '_id': 301806544865001
+        //       },
+        //       {
+        //         'title': '720P',
+        //         '_id': 221842132806002
+        //       },
+        //       {
+        //         'title': '540P',
+        //         '_id': 221842132821001
+        //       }
+        //     ]
+        //   }
+        // ],
+        // liveOtherVideo: [
+        //   {
+        //     tvid: 301806544865001,
+        //     other_video: [
+        //       {
+        //         _id: 0,
+        //         rate: [
+        //           {
+        //             _id: 101806544865003,
+        //             title: '高清1080P',
+        //             detail_title: '女排世锦赛六强赛_1080P'
+        //           },
+        //           {
+        //             _id: 101806544865002,
+        //             title: '超清720P',
+        //             detail_title: '女排世锦赛六强赛_720P'
+        //           },
+        //           {
+        //             _id: 221842135914182,
+        //             title: '清晰540P',
+        //             detail_title: '女排世锦赛六强赛_540P'
+        //           }
+        //         ]
+        //       }
+        //     ],
+        //     title: '腾讯直播',
+        //     seo: 'sportvs'
+        //   }
+        // ],
+        qualityList: [
+          { _id: '111', title: '1080P', url: '111', selection: true },
+          { _id: '222', title: '720P', url: '222' },
+          { _id: '333', title: '540P', url: '333' },
+        ],
+        barrage: {
+          colorList: [],
+          startBarrageList: [{ text: '做好战斗准备，12123条弹幕来袭！' }]
+        }
+      }
+
+      deepMerge(window.currentPartInfo, {
+        first: true, // 用来判断是否是第一次进入页面
+        keepHistory: false, // 是否保留 currentPartInfo 的历史纪录字段。
+        nbaInfo: {
+          // leftTeam: '中国',
+          // rightTeam: '美国',
+          // rate: '让球0 主胜2.05 平3.10 客胜3.15',
+          leftTeam: '',
+          rightTeam: '',
+          rate: '',
+          url: 'http://www.baidu.com',
+          intervals: 5000,
+          disprologue: 3000,
+          bettingTitle: '/tpl_pc/assets/imgs/fifa/video_betting-title.png?v=201806141911',
+          bettingButton: '/tpl_pc/assets/imgs/fifa/video_betting-btn.png?v=201806141911'
+        },
+        url: {
+          // getBarrage: '/danmu/pop',
+          // getBarrage: 'http://www.image.tv:1234/barrage/list',
+          // error: '/reportError',
+          // shareDomainName: 'http://share.tenrry.com',
+          // shareParam: '/qrcode/getQrcodeparm',
+          // share: '/User/usershare',
+          // wxSubscribe: '/newChannel/wxSubscribe',
+        },
+        errorOptions: {
+          timeoutTime: 1, // 卡顿提示用户切换线路
+          firstTimeoutRequestTime: 1, // 第一次卡顿向后台发送请求
+          timeoutRequestTime: 10, // 持续性卡顿向后台发送请求
+          isRepeat: true, // 一次卡顿中是否需要重复发送
+          errorTime: 30, // 错误向后台发送求情
+          disableTime: 60 // 禁用时长，当卡顿秒数大于此数时，不会向后台发送请求
+        },
+        limit: {
+          // android: '/download#andriodapp',
+          // ios: '/download#iosapp',
+          // ipad: '/download#iosapp',
+        },
+        // expansion: {
+        //   click: function () {
+        //     console.log('click');
+        //   }
+        // },
+
+        oneMounted: function () {
+          // console.log('oneMounted')
+
+          // console.log('exportGetVisibleBarrageColor', kanPlayer.default.exportGetVisibleBarrageColor())
+
+          // kanPlayer.default.exportSetVisibleBarrageColor(false)
+          kanPlayer.default.exportSetBarrageContent('123')
+
+        },
+
+        setKeepHistory: function ({ keepHistory }) {
+          window.currentPartInfo.keepHistory = keepHistory
+        },
+        changeQuality: function ({ partId }) {
+          console.log(partId)
+        },
+        // requestFullscreen: function () {
+        //   document.querySelector(window.currentPartInfo.playerBox).requestFullscreen();
+        // },
+        // exitFullscreen: function () {
+        //   return document.querySelector(window.currentPartInfo.playerBox);
+        // },
+        // isFullscreen: function () {
+        //   return document.fullscreen;
+        // }
+        hasNextPart: function () {
+          // console.log('hasNextPart args')
+          return true
+        },
+        nextPart: function () {
+          // console.log('nextPart args')
+
+          if (window.next1) {
+            vjsPlayUrl({
+              playType: 'm3u8',
+              // playUrl: '/video/m3u8/play.m3u8',
+              playUrl: `http://bny.remuxhdr.com/666/720/play.m3u8`,
+              part: 3,
+              part_id: 101806544865003
+            })
+          } else {
+            vjsPlayUrl({
+              playType: 'mp4',
+              // playUrl: '/video/m3u8/play.m3u8',
+              playUrl: `http://bny.remuxhdr.com/666/720/play.m3u8`,
+              part: 3,
+              part_id: 101806544865003
+            })
+          }
+
+          window.next1 = !window.next1
+
+          return false
+        },
+        // hasNextLine: function () {
+        //   console.log('hasNextLine args');
+        //   return false;
+        // },
+        // nextLine: function () {
+        //   console.log('nextLine args');
+        //   return false;
+        // },
+        changePart: function () {
+          console.log('changePart args')
+
+          vjsPlayUrl({
+            playType: 'mp4',
+            playUrl: './video/mp4.mp4',
+            part: 3,
+            part_id: 101806544865003
+          })
+
+          return false
+        },
+        toggleCollect: function (cb) {
+          console.log('toggleCollect')
+
+          cb(true)
+        },
+        sendBarrage: function (...args) {
+          // console.log('sendBarrage', args)
+        },
+        getBarrage: function (...args) {
+          // console.log('getBarrage', args)
+        },
+        watchHistory: function ({ currentTime, validsec }) {
+          // console.log('watchHistory', currentTime, validsec)
+        },
+        wxSubscribeFn: function ({ code, success, error }) {
+          // console.log('wxSubscribeFn')
+
+          // setTimeout(() => {
+          //   success({ code, wxCode: '', wxTimeout: 0 });
+          // }, 3000);
+        },
+        jinriSubscribeFn: function ({ code, success, error }) {
+          // console.log('wxSubscribeFn')
+
+          // setTimeout(() => {
+          //   success({ code: 0, data: { status: 1 } });
+          // }, 3000);
+        },
+        error: function (args) {
+          console.log('error', args)
+        },
+        play: function () {
+          // console.log('play')
+        },
+        pause: function () {
+          // console.log('pause')
+        },
+        onEnterPictureInPicture: function () {
+          // console.log('onEnterPictureInPicture')
+        },
+        onBarrageLike: function () {
+          // console.log('onBarrageLike', arguments)
+
+          return false
+        },
+        onClickBarrageReportButton: function () {
+          return true
+        },
+        onBarrageReport: function () {
+          // console.log('onBarrageReport', arguments)
+        },
+        onChangeBarrageContent: function () {
+          // console.log('onChangeBarrageContent', arguments)
+        },
+        onForward: function () {
+          // console.log('onForward', arguments)
+        },
+        onBackward: function () {
+          // console.log('onBackward', arguments)
+        },
+        onChangePlaybackRate: function () {
+          // console.log('onChangePlaybackRate', arguments)
+        },
+        onChangeVolume: function () {
+          // console.log('onChangeVolume', arguments)
+        },
+        onScreenshot: function () {
+          // console.log('onScreenshot', arguments)
+        },
+        onClickBarragePopup: function () {
+          // console.log('onClickBarragePopup', arguments)
+        },
+        onChangeSettingNextPart: function () {
+          // console.log('onChangeSettingNextPart', arguments)
+        },
+        onChangeSettingJumpOpEd: function () {
+          // console.log('onChangeSettingJumpOpEd', arguments)
+        },
+        onChangeSettingSwitchLight: function () {
+          // console.log('onChangeSettingSwitchLight', arguments)
+        },
+        onRequestFullscreen: function () {
+          // console.log('onRequestFullscreen', arguments)
+        },
+        onExitFullscreen: function () {
+          // console.log('onExitFullscreen', arguments)
+        },
+        onPageRequestFullscreen: function () {
+          // console.log('onPageRequestFullscreen', arguments)
+        },
+        onPageExitFullscreen: function () {
+          // console.log('onPageExitFullscreen', arguments)
+        },
+        onJinriWapOpenUrl: function () {
+          console.log('onJinriWapOpenUrl', arguments)
+        },
+        onJinriPcShow: function () {
+          console.log('onJinriPcShow')
+        },
+        onChangeCurrentTime: function (currentTIme) {
+          // console.log('onChangeCurrentTime', currentTIme)
+        },
+      })
+
+      function vjsPlayUrl(args) {
+        deepMerge(window.currentPartInfo, args);
+
+        window.kanPlayer.initPlayer(window.currentPartInfo)
+      }
+
+      window.vjsPlayUrl = vjsPlayUrl
+
+      const videoListInfo = {
+        prologue: 60,
+        playList: [
+          {
+            id: 10001,
+            type: 'normal', // normal | advertising
+            playType: 'm3u8',
+            playUrl: '/video/m3u8/play.m3u8',
+            tvid: 101806544865000,
+            part_id: 101806544865003,
+            duration: 364.79776599999997
+          },
+          {
+            id: 10002,
+            type: 'advertising',
+            seconds: 15,
+            photo: '/video/1.mp4',
+            url: 'http://www.baidu.com'
+          },
+          {
+            id: 10003,
+            type: 'advertising',
+            seconds: 15,
+            photo: '/video/2.mp4',
+            url: 'http://www.baidu.com',
+          },
+          {
+            id: 10004,
+            type: 'normal', // normal | advertising
+            playType: 'mp4',
+            playUrl: '/video/mp4.mp4',
+            tvid: 101806544865000,
+            part_id: 101806544865006,
+            duration: 249.258667
+          },
+          {
+            id: 10003,
+            type: 'advertising',
+            seconds: 15,
+            photo: '/video/2.mp4',
+            url: 'http://www.baidu.com',
+          },
+          {
+            id: 10005,
+            type: 'normal', // normal | advertising
+            playType: 'm3u8',
+            playUrl: '/video/m3u8/play.m3u8',
+            tvid: 101806544865000,
+            part_id: 101806544865003,
+            duration: 364.79776599999997
+          },
+        ]
+      }
+
+      const currentVideoListInfo = {
+        id: 10001,
+        prologue: 60,
+        advertisingVideoList: [],
+        videoInfo: {
+          id: 10001,
+          type: 'normal', // normal | advertising
+          playType: 'm3u8',
+          playUrl: '/video/m3u8/play.m3u8',
+          tvid: 101806544865000,
+          part_id: 101806544865003,
+          duration: 364.79776599999997
+        }
+      }
+
+      const nextVideoListInfo = [
+        {
+          id: 10004,
+          advertisingVideoList: [
+            {
+              id: 10002,
+              type: 'advertising',
+              seconds: 15,
+              photo: '/video/1.mp4',
+              url: 'http://www.baidu.com'
+            },
+            {
+              id: 10003,
+              type: 'advertising',
+              seconds: 15,
+              photo: '/video/2.mp4',
+              url: 'http://www.baidu.com',
+            },
+          ],
+          videoInfo: {
+            id: 10004,
+            type: 'normal', // normal | advertising
+            playType: 'mp4',
+            playUrl: '/video/mp4.mp4',
+            tvid: 101806544865000,
+            part_id: 101806544865006,
+            duration: 249.258667
+          },
+        },
+        {
+          id: 10004,
+          advertisingVideoList: [
+            {
+              id: 10003,
+              type: 'advertising',
+              seconds: 15,
+              photo: '/video/2.mp4',
+              url: 'http://www.baidu.com',
+            },
+          ],
+          videoInfo: {
+            id: 10005,
+            type: 'normal', // normal | advertising
+            playType: 'm3u8',
+            playUrl: '/video/m3u8/play.m3u8',
+            tvid: 101806544865000,
+            part_id: 101806544865003,
+            duration: 364.79776599999997
+          },
+        },
+      ]
+
+      vjsPlayUrl({
+        playType: currentVideoListInfo.videoInfo.playType,
+        playUrl: currentVideoListInfo.videoInfo.playUrl,
+        part_id: currentVideoListInfo.videoInfo.part_id,
+        prologue: currentVideoListInfo.prologue,
+        // advertising: {
+        //   mandatory: {
+        //     0: currentVideoListInfo.advertisingVideoList
+        //   }
+        // },
+        // customControl: {
+        //   live: true
+        // }
+      })
+
+      // 正常
+      vjsPlayUrl({
+        playType: 'm3u8',
+        playUrl: '/video/m3u8/play.m3u8',
+        // playUrl: '/video2/index_new.m3u8',
+        // playUrl: '/video/m3u8/play123.m3u8',
+        // playUrl: `http://bny.remuxhdr.com/666/720/play.m3u8`,
+        // playUrl: `./video/m3u8/play.m3u8?params=${Math.random()}`,
+        // playType: 'mp4',
+        // playUrl: `./video/mp4.mp4`,
+        part: 3,
+        part_id: 101806544865003
+      })
+    }
+
+    setTimeout(() => {
+      console.log('window.currentPartInfo', window.currentPartInfo)
+      window.currentPartInfo.barrage.colorList = [{"tid":10471,"name":"默认","color":"ffffff","canUse":true},{"tid":10472,"name":"绿","color":"1AC995","canUse":false,"hint":"需要达到10级别解锁"},{"tid":10473,"name":"蓝","color":"36A7FD","canUse":false,"hint":"需要达到15级别解锁"},{"tid":10474,"name":"橙","color":"EB754C","canUse":false,"hint":"需要达到25级别解锁"},{"tid":10475,"name":"红","color":"E94877","canUse":false,"hint":"需要达到30级别解锁"},{"tid":10476,"name":"紫","color":"BF8CEF","canUse":false,"hint":"需要达到40级别解锁"}]
+    }, 3000)
+  </script>
+
+  <script>
+    var curr = true;
+    // var str = './video/m3u8/play.m3u8';
+    // var str2 = './video/mp4.mp4';
+
+    var str = `http://bny.remuxhdr.com/666/720/play.m3u8`
+    var str2 = `http://bny.remuxhdr.com/666/720/play.m3u8`
+
+    function toggleVideo () {
+      window.currentPartInfo.history = { sec: 0, part_id: null, part: null };
+
+      if (curr) {
+        vjsPlayUrl({
+          playType: 'mp4',
+          playUrl: str2,
+          part: 2,
+          part_id: 101806544865002
+        });
+      } else {
+        vjsPlayUrl({
+          playType: 'm3u8',
+          playUrl: str,
+          part: 1,
+          part_id: 101806544865001
+        });
+      }
+
+      curr = !curr;
+    };
+
+    document.querySelector('#toggle').onclick = toggleVideo;
+    // setIntervel(toggleVideo, 20000);
+  </script>
+
+  <!-- <button class="vjs-barrage-submit">发送</button>
+  <input type="text" class="vjs-barrage-input" placeholder="据说发弹幕可以变帅变美哦！">
+
+  <script>
+    document.querySelector('.vjs-barrage-submit').onclick = function () {
+      window.vjsAddBarrage({
+        notLogin: function () {
+          // modal_login.open();
+        },
+      });
+    };
+  </script> -->
+
+  <!-- <a class="mtg-videoplay-share-item play-keep" id="showToast">
+    收藏
+  </a>
+
+  <script>
+    var playKeep = document.querySelector('.play-keep');
+    playKeep.onclick = function () {
+      if (!playKeep.classList.contains('test')) {
+        playKeep.classList.add('test');
+        playKeep.innerHTML = '已收藏';
+      } else {
+        playKeep.classList.remove('test');
+        playKeep.innerHTML = '收藏';
+      }
+    };
+  </script> -->
+
+  <!-- <video id="textVideo" src="" style="width: 200px; height: 200px;"></video>
+  <video id="textVideo2" src="" style="width: 200px; height: 200px;"></video>
+  <button id="testBen">播放</button>
+  <script>
+    let textVideo = document.querySelector('#textVideo');
+    textVideo.src = './video/mp4.mp4';
+
+    let textVideo2 = document.querySelector('#textVideo2');
+    textVideo2.src = './video/mp4.mp4';
+
+    let testBen = document.querySelector('#testBen');
+
+    var str = '/video/1.mp4';
+
+    textVideo.play();
+
+    testBen.onclick = function () {
+      textVideo.src = str;
+      // textVideo.play();
+
+      setTimeout(() => {
+        textVideo.pause();
+
+        setTimeout(() => {
+          textVideo.play();
+        }, 3000);
+      }, 3000);
+
+      // textVideo.play();
+
+      // setTimeout(() => {
+      //   textVideo.pause();
+      //   textVideo2.play();
+      // }, 1000);
+    };
+  </script> -->
+
+  <!-- <input id="testInput" type="text" name="" id=""> -->
+  <!-- <script>
+    document.querySelector('#testInput').addEventListener('keydown', function (e) {
+      e.stopPropagation();
+    });
+  </script> -->
+
+  <!-- <div class="live-videoplay-line">
+    <div class="live-videoplay-line_item active">
+      <a href="javascript:void(0);" data-seo="sports" data-line="1" onclick="PlayVideo(1923724001, 1911541001, this)">高清1</a>
+    </div>
+    <div class="live-videoplay-line_item">
+      <a href="javascript:void(0);" data-seo="sports" data-line="2" onclick="PlayVideo(1923724001, 1925444001, this)">高清2</a>
+    </div>
+    <div class="live-videoplay-line_item">
+      <a href="javascript:void(0);" data-seo="sports" data-line="3" onclick="PlayVideo(1923724001, 1923724002, this)">高清3</a>
+    </div>
+    <div class="live-videoplay-line_item">
+      <a href="javascript:void(0);" data-seo="sports" data-line="4" onclick="PlayVideo(1923724001, 2009924001, this)">流畅</a>
+    </div>
+  </div>
+
+  <button id="changePlayState">播放状态切换</button>
+
+  <script>
+    document.querySelector('#changePlayState').onclick = function () {
+      window.kanPlayer.default.changePlayState();
+    };
+  </script> -->
+</body>
+
+</html>
